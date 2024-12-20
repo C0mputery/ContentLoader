@@ -14,6 +14,7 @@ public class DoorstepBepInExHandler {
     private static readonly string BepInExPluginFolder = Path.Combine(RootGameFolder, "BepInEx", "plugins");
     private static readonly string ContentWarningPluginFolder = Path.Combine(RootGameFolder, "Plugins");
     private static readonly string DoorStopConfig = Path.Combine(RootGameFolder, "doorstop_config.ini");
+    private static readonly string DoorVersion = Path.Combine(RootGameFolder, ".doorstop_version");
     private static readonly string WinHttpDll = Path.Combine(RootGameFolder, "winhttp.dll");
     private static readonly string LocalInstallPath = Path.Combine(ContentWarningPluginFolder, "ContentLoader");
 
@@ -55,10 +56,11 @@ public class DoorstepBepInExHandler {
         return false;
     }
     
-    private static void UninstallBepInEx() {
+    private static void UninstallBepInEx() { 
         if (Directory.Exists(BepInExPluginFolder)) { Directory.Delete(BepInExPluginFolder, true); }
-        if (File.Exists(WinHttpDll)) { File.Delete(WinHttpDll); }
         if (File.Exists(DoorStopConfig)) { File.Delete(DoorStopConfig); }
+        if (File.Exists(DoorVersion)) { File.Delete(DoorVersion); }
+        /*if (File.Exists(WinHttpDll)) { File.Delete(WinHttpDll); }*/
     }
     
     private static void MoveLocalPlugins() {

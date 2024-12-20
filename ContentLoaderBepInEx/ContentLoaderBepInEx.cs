@@ -111,7 +111,7 @@ public class PluginPatch {
                     PluginLocal pluginLocal = new PluginLocal {
                         directory = folder,
                         assembly = plugin.PluginExternal.assembly,
-                        info = plugin.PluginExternal.InfoFromAssembly.Value
+                        info = plugin.PluginExternal.InfoFromAssembly!.Value
                     };
                     plugin.PluginLocal = pluginLocal;
                     __instance.DrawPublishScreen(plugin, page);
@@ -121,7 +121,7 @@ public class PluginPatch {
                 PluginLocal pluginLocal = new PluginLocal {
                     directory = folder,
                     assembly = plugin.PluginExternal.assembly,
-                    info = plugin.PluginExternal.InfoFromAssembly.Value
+                    info = plugin.PluginExternal.InfoFromAssembly!.Value
                 };
                 plugin.PluginLocal = pluginLocal;
                 __instance.DrawPublishScreen(plugin, page);

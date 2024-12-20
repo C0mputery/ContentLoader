@@ -11,7 +11,8 @@ public class DoorstepBepInExHandler {
     private static readonly string BepInExPreload = Path.Combine(DoorstopAssemblyLocation, "..", "BepInEx.Preloader.dll");
     private static readonly string ManagedFolder = Path.Combine(RootGameFolder, "Content Warning_Data", "Managed");
     private static readonly string SteamworksAssembly = Path.Combine(ManagedFolder, "com.rlabrecque.steamworks.net.dll");
-    private static readonly string BepInExPluginFolder = Path.Combine(RootGameFolder, "BepInEx", "plugins");
+    private static readonly string BepInExFolder = Path.Combine(RootGameFolder, "BepInEx");
+    private static readonly string BepInExPluginFolder = Path.Combine(BepInExFolder, "plugins");
     private static readonly string ContentWarningPluginFolder = Path.Combine(RootGameFolder, "Plugins");
     private static readonly string DoorStopConfig = Path.Combine(RootGameFolder, "doorstop_config.ini");
     private static readonly string DoorVersion = Path.Combine(RootGameFolder, ".doorstop_version");
@@ -57,7 +58,7 @@ public class DoorstepBepInExHandler {
     }
     
     private static void UninstallBepInEx() { 
-        if (Directory.Exists(BepInExPluginFolder)) { Directory.Delete(BepInExPluginFolder, true); }
+        if (Directory.Exists(BepInExFolder)) { Directory.Delete(BepInExFolder, true); }
         if (File.Exists(DoorStopConfig)) { File.Delete(DoorStopConfig); }
         if (File.Exists(DoorVersion)) { File.Delete(DoorVersion); }
         /*if (File.Exists(WinHttpDll)) { File.Delete(WinHttpDll); }*/

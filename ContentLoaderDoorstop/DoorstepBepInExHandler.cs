@@ -12,7 +12,10 @@ public class DoorstepBepInExHandler {
     private static readonly string ManagedFolder = Path.Combine(RootGameFolder, "Content Warning_Data", "Managed");
     private static readonly string SteamworksAssembly = Path.Combine(ManagedFolder, "com.rlabrecque.steamworks.net.dll");
     private static readonly string BepInExPluginFolder = Path.Combine(RootGameFolder, "BepInEx", "plugins");
-    private static readonly string ContentWarningPluginFolder = Path.Combine(RootGameFolder, "plugins");
+    private static readonly string ContentWarningPluginFolder = Path.Combine(RootGameFolder, "Plugins");
+    private static readonly string DoorStopConfig = Path.Combine(RootGameFolder, "doorstop_config.ini");
+    private static readonly string WinHttpDll = Path.Combine(RootGameFolder, "winhttp.dll");
+    private static readonly string LocalInstallPath = Path.Combine(ContentWarningPluginFolder, "ContentLoader");
 
     public static void UpdateBepInEx() {
         if (!File.Exists(InactiveDoorstopAssemblyLocation)) { return; }
@@ -25,7 +28,9 @@ public class DoorstepBepInExHandler {
         }
     }
 
-    public static void StartBepInEx() { Assembly.LoadFrom(BepInExPreload).GetType("Doorstop.Entrypoint").GetMethod("Start").Invoke(null, null); }
+    public static void StartBepInEx() {
+        Assembly.LoadFrom(BepInExPreload).GetType("Doorstop.Entrypoint").GetMethod("Start").Invoke(null, null);
+    }
     
     public static void MoveBepInExPlugins() {
         Directory.CreateDirectory(BepInExPluginFolder);
@@ -36,10 +41,29 @@ public class DoorstepBepInExHandler {
         
         RemoveUnsubscribedPlugins(subscribedItems);
         MoveSubscribedPlugins(subscribedItems);
+
+        if (!CheckForContentLoader(subscribedItems)) {
+            UninstallBepInEx();
+            throw new Exception("Content Loader Unsubscribed or Missing");
+        }
+    }
+    
+    private static bool CheckForContentLoader(PublishedFileId_t[] subscribedItems) {
+        // https://steamcommunity.com/sharedfiles/filedetails/?id=3387698650
+        if (Directory.Exists(LocalInstallPath)) { return true; }
+        foreach (PublishedFileId_t t in subscribedItems) { if (t.ToString() == "3387698650") { return true; } }
+        return false;
+    }
+    
+    private static void UninstallBepInEx() {
+        if (Directory.Exists(BepInExPluginFolder)) { Directory.Delete(BepInExPluginFolder, true); }
+        if (File.Exists(WinHttpDll)) { File.Delete(WinHttpDll); }
+        if (File.Exists(DoorStopConfig)) { File.Delete(DoorStopConfig); }
     }
     
     private static void MoveLocalPlugins() {
-        string[] directories = Directory.GetDirectories(DoorstepBepInExHandler.ContentWarningPluginFolder);
+        if (!Directory.Exists(ContentWarningPluginFolder)) { return; }
+        string[] directories = Directory.GetDirectories(ContentWarningPluginFolder);
         foreach (string directory in directories) {
             if (!DirectoryHasBepInExPlugin(directory)) { continue; }
             string targetDirectory = Path.Combine(DoorstepBepInExHandler.BepInExPluginFolder, Path.GetFileName(directory));
@@ -65,7 +89,7 @@ public class DoorstepBepInExHandler {
             if (!DirectoryHasBepInExPlugin(directory)) { continue; }
             string targetDirectory = Path.Combine(DoorstepBepInExHandler.BepInExPluginFolder, t.ToString());
             Copy(directory, targetDirectory);
-            File.WriteAllText(Path.Combine(targetDirectory, "SteamWorkshop"), t.ToString());
+            File.WriteAllText(Path.Combine(targetDirectory, "SteamWorkshop"), t.ToString()); 
         }
     }
 

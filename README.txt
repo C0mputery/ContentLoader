@@ -24,9 +24,9 @@ Steam Workshop Description:
     [*]Select your plugin within the mod manger and upload
 [/list]
 
-[h3]Uploading More Advanced Plugins[/h3]
-[h2]This Will Require the Steam Command Line[/h2]
-[h2]Prepare Mod:[/h2]
+[h2]Uploading More Advanced Plugins[/h2]
+[h3]This Will Require the Steam Command Line[/h3]
+[h3]Prepare Mod:[/h3]
 [list]
     [*]Create a folder for your plugin, it can be anywhere
     [*]Create a sub folder named: 
@@ -35,7 +35,7 @@ Root
 [/code] 
     [*]Any files put into this folder will be placed into the game relative to the root of the game.
 [/list]
-[h2]Upload Mod:[/h2]
+[h3]Upload Mod:[/h3]
     [*]Make a descriptor
 [code]
 "workshopitem"

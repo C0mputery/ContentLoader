@@ -21,15 +21,10 @@ public class ContentLoaderBepInEx : BaseUnityPlugin {
 
 [HarmonyPatch(typeof(Plugin))]
 public class PluginPatchAgain {
-    public void PatchNonBepinExShit(Assembly assembly)
+    public static void PatchNonBepinExShit(Assembly assembly)
     {
-            Debug.Log("Skipping BepInEx mod: " + assembly.Location);
-        if (DirectoryHasBepInExPlugin(Path.GetDirectoryName(assembly.Location))) {
-            Debug.Log("Skipping BepInEx mod: " + assembly.Location);
-            return;
-        }
-        Debug.Log("Patching non-BepInEx mod: " + assembly.Location);
-        Harmony.CreateAndPatchAll(assembly);
+        if (DirectoryHasBepInExPlugin(Path.GetDirectoryName(assembly.Location)!)) { return; }
+        Plugin.Harmony.PatchAll(assembly);
     }
     
     [HarmonyTranspiler]
@@ -39,17 +34,18 @@ public class PluginPatchAgain {
         codeMatcher.SearchForward(i =>
             i.opcode == OpCodes.Callvirt &&
             i.OperandIs(AccessTools.Method(typeof(Harmony), nameof(Harmony.PatchAll), new[] { typeof(Assembly) })));
-        Debug.Log("LoadAssemblyFromFilePatch: " + codeMatcher.Instruction);
         codeMatcher.RemoveInstruction();
-        codeMatcher.InsertAndAdvance(new CodeInstruction(OpCodes.Call,
+        codeMatcher.Insert(new CodeInstruction(OpCodes.Call,
             AccessTools.Method(typeof(PluginPatchAgain), nameof(PatchNonBepinExShit))));
         
-        codeMatcher.Advance(-1);
-        codeMatcher.RemoveInstruction();
-        codeMatcher.Advance(-2);
+        codeMatcher.Advance(-3);
         codeMatcher.RemoveInstruction();
         
         codeMatcher.ThrowIfInvalid("LoadAssemblyFromFilePatch did not work!");
+        
+        foreach (CodeInstruction instruction in codeMatcher.Instructions()) {
+            Debug.Log(instruction);
+        }
         return codeMatcher.InstructionEnumeration();
     }
 

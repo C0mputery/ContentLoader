@@ -25,12 +25,7 @@ public static partial class DoorstepBepInExHandler {
             ulong publishedFileId = publishedFileIdT.m_PublishedFileId;
             
             if (!SteamUGC.GetItemInstallInfo(publishedFileIdT, out _, out string directory, 2048U, out _)) { continue; }
-
-            if (!IsBepInExPlugin(directory)) {
-                string name = Path.GetFileName(directory);
-                File.WriteAllText(name + ".txt", "Not a BepInEx plugin" + directory);
-                continue;
-            }
+            if (!IsBepInExPlugin(directory)) { continue; }
             
             string rootDirectory = Path.Combine(directory, SpecialFolderNameRoot);
             if (Directory.Exists(rootDirectory)) {

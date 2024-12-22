@@ -9,7 +9,6 @@ public class Entrypoint {
     public static void Start() {
         try {
             DoorstepBepInExHandler.LoadNecessaryAssemblies();
-            DoorstepBepInExHandler.CheckForContentLoaderUpdate();
             DoorstepBepInExHandler.InstallBepInExPlugins();
             DoorstepBepInExHandler.StartBepInEx();
         }

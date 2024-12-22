@@ -3,6 +3,7 @@ using Mono.Cecil;
 using Newtonsoft.Json;
 using Sirenix.Utilities;
 using Steamworks;
+using UnityEngine;
 
 namespace ContentLoaderDoorstop;
 
@@ -10,17 +11,10 @@ public static partial class DoorstepBepInExHandler {
     public static void StartBepInEx() {
         Assembly.LoadFrom(BepInExPreload).GetType("Doorstop.Entrypoint").GetMethod("Start")!.Invoke(null, null);
     }
-
-    public static void CheckForContentLoaderUpdate() {
-        if (!File.Exists(InactiveDoorstopAssemblyLocation)) { return; }
-        if (File.Exists(DoorstopAssemblyLocation)) {
-            byte[] contentLoaderDoorstopAssemblyBytes = File.ReadAllBytes(InactiveDoorstopAssemblyLocation);
-            byte[] currentContentLoaderDoorstopAssemblyBytes = File.ReadAllBytes(DoorstopAssemblyLocation);
-            if (!contentLoaderDoorstopAssemblyBytes.SequenceEqual(currentContentLoaderDoorstopAssemblyBytes)) { File.Delete(DoorstopAssemblyLocation); }
-        }
-    }
     
     public static void InstallBepInExPlugins() {
+        Directory.SetCurrentDirectory(RootGameFolder);
+        
         SteamAPI.Init();
         PublishedFileId_t[] subscribedItems = GetSubscribedItems();
         if (!CheckForContentLoader(subscribedItems)) { UninstallBepInEx(); throw new Exception("ContentLoader not found"); }
@@ -31,10 +25,17 @@ public static partial class DoorstepBepInExHandler {
             ulong publishedFileId = publishedFileIdT.m_PublishedFileId;
             
             if (!SteamUGC.GetItemInstallInfo(publishedFileIdT, out _, out string directory, 2048U, out _)) { continue; }
-            if (!IsBepInExPlugin(directory)) { continue; }
+
+            if (!IsBepInExPlugin(directory)) {
+                string name = Path.GetFileName(directory);
+                File.WriteAllText(name + ".txt", "Not a BepInEx plugin" + directory);
+                continue;
+            }
             
             string rootDirectory = Path.Combine(directory, SpecialFolderNameRoot);
-            if (Directory.Exists(rootDirectory)) { subscribedItemPaths.AddRange(InstallRootMod(rootDirectory)); }
+            if (Directory.Exists(rootDirectory)) {
+                subscribedItemPaths.AddRange(InstallRootMod(rootDirectory));
+            }
             else {
                 string pluginFolder = Path.Combine(BepInExPluginFolder, publishedFileId.ToString());
                 Copy(directory, pluginFolder);
@@ -77,7 +78,10 @@ public static partial class DoorstepBepInExHandler {
                 string targetDirectory = Path.GetDirectoryName(targetFile)!;
                 if (!Directory.Exists(targetDirectory)) { Directory.CreateDirectory(targetDirectory); }
                 File.Copy(file, targetFile);
-            } catch (Exception) { /* ignored */ }
+            } catch (Exception) {
+                /* ignored */
+            }
+            
         }
         return targetFiles;
     }

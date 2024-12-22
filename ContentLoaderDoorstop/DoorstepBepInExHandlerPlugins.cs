@@ -25,7 +25,7 @@ public static partial class DoorstepBepInExHandler {
                 }
                 foreach (PropertyDefinition property in type.Properties) {
                     if (property.Name != "TargetDLLs") { continue; }
-                    if (property.PropertyType.Name != "System.Collections.Generic.IEnumerable`1<System.String>") { continue; }
+                    if (property.PropertyType.FullName != "System.Collections.Generic.IEnumerable`1<System.String>") { continue; }
                     MethodDefinition? method = property.GetMethod;
                     if (method == null) { continue; }
                     if (!method.IsStatic) { continue; }

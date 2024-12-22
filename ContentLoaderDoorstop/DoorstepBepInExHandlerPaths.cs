@@ -5,9 +5,9 @@ namespace ContentLoaderDoorstop;
 
 public static partial class DoorstepBepInExHandler {
     private static readonly string DoorstopAssemblyLocation = Assembly.GetExecutingAssembly().Location;
-    private static readonly string RootGameFolder = Path.Combine(DoorstopAssemblyLocation, "..", "..", "..");
-    private static readonly string InactiveDoorstopAssemblyLocation = Path.Combine(RootGameFolder, "Plugins", "ContentLoader", "BepInEx", "ContentLoaderDoorstop.dll");
-    private static readonly string BepInExPreload = Path.Combine(DoorstopAssemblyLocation, "..", "BepInEx.Preloader.dll");
+    private static readonly string BepInExCoreFolder = Path.GetDirectoryName(DoorstopAssemblyLocation)!;
+    private static readonly string RootGameFolder = Path.GetFullPath(Path.Combine(BepInExCoreFolder, "..", ".."));
+    private static readonly string BepInExPreload = Path.Combine(BepInExCoreFolder, "BepInEx.Preloader.dll");
     private static readonly string ManagedFolder = Path.Combine(RootGameFolder, "Content Warning_Data", "Managed");
     private static readonly string SteamworksAssembly = Path.Combine(ManagedFolder, "com.rlabrecque.steamworks.net.dll");
     private static readonly string NewtonsoftAssembly = Path.Combine(ManagedFolder, "Newtonsoft.Json.dll");

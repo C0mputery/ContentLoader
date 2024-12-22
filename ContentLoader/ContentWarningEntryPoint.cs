@@ -15,10 +15,10 @@ public class ContentWarningEntryPoint {
     private static readonly string InactiveBepInEx = Path.Combine(ContentLoaderPluginFolder, "BepInEx");
     
     static ContentWarningEntryPoint() {
-        UpdateBepInEx();
+        CheckBepInEx();
     }
 
-    static void UpdateBepInEx() {
+    static void CheckBepInEx() {
         Logger.Log("Content Warning Entrypoint Hit");
         
         if (!File.Exists(InactiveDoorstopAssemblyLocation)) {
@@ -26,28 +26,26 @@ public class ContentWarningEntryPoint {
             return;
         }
         
-        bool updateBepInEx = false;
         if (File.Exists(DoorstopAssemblyLocation)) {
             byte[] inactiveDoorstopAssemblyBytes = File.ReadAllBytes(InactiveDoorstopAssemblyLocation);
             byte[] doorstopAssemblyBytes = File.ReadAllBytes(DoorstopAssemblyLocation);
             if (!inactiveDoorstopAssemblyBytes.SequenceEqual(doorstopAssemblyBytes)) {
                 Logger.LogWarning("ContentLoaderDoorstop.dll is not correct, reinstalling bepInEx...");
-                updateBepInEx = true;
+                InstallBepInEx();
             }
         }
         else {
             Logger.LogWarning("ContentLoaderDoorstop.dll is missing, installing bepInEx...");
-            updateBepInEx = true;
-        }
-        
-        if (updateBepInEx) {
-            Copy(InactiveBepInEx, RootGameFolder);
-            Logger.Log("BepInEx Installed");
-            Modal.Show("BepInEx Has Been Installed/Updated", "A restart is required to load the plugins.", [new ModalOption("Restart", Restart)]);
-            return;
+            InstallBepInEx();
         }
         
         Logger.Log("BepInEx is already installed");
+    }
+    
+    static void InstallBepInEx() {
+        Copy(InactiveBepInEx, RootGameFolder);
+        Logger.Log("BepInEx Installed");
+        Modal.Show("BepInEx Has Been Installed", "A restart is required to load the plugins.", [new ModalOption("Restart", Restart)]);
     }
     
     static void Restart() {

@@ -5,7 +5,7 @@ using Debug = UnityEngine.Debug;
 
 namespace ContentLoader;
 
-[ContentWarningPlugin("Computery.ContentLoader", "3.0", true)]
+[ContentWarningPlugin("Computery.ContentLoader", "3.1", true)]
 public class ContentWarningEntryPoint {
     private static readonly string AssemblyLocation = Assembly.GetExecutingAssembly().Location;
     private static readonly string RootGameFolder = Path.Combine(Application.dataPath, "..");

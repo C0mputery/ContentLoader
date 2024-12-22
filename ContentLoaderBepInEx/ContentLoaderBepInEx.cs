@@ -10,8 +10,8 @@ using Zorro.Settings;
 
 namespace BepInExFix;
 
-[ContentWarningPlugin("Computery.ContentLoader.BepInEx", "3.0", true)]
-[BepInPlugin("Computery.ContentLoader.BepInEx", "Content Loader BepInEx", "3.0.0")]
+[ContentWarningPlugin("Computery.ContentLoader.BepInEx", "3.1", true)]
+[BepInPlugin("Computery.ContentLoader.BepInEx", "Content Loader BepInEx", "3.1.0")]
 public class ContentLoaderBepInEx : BaseUnityPlugin {
     public void Awake() {
         Debug.Log("Content Loader BepInEx Awake");
@@ -42,10 +42,6 @@ public class PluginPatchAgain {
         codeMatcher.RemoveInstruction();
         
         codeMatcher.ThrowIfInvalid("LoadAssemblyFromFilePatch did not work!");
-        
-        foreach (CodeInstruction instruction in codeMatcher.Instructions()) {
-            Debug.Log(instruction);
-        }
         return codeMatcher.InstructionEnumeration();
     }
 

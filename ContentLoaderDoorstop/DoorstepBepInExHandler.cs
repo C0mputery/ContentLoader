@@ -1,59 +1,90 @@
 ﻿using System.Reflection;
 using Mono.Cecil;
+using Newtonsoft.Json;
+using Sirenix.Utilities;
 using Steamworks;
 
 namespace ContentLoaderDoorstop;
 
-public class DoorstepBepInExHandler {
-    private static readonly string DoorstopAssemblyLocation = Assembly.GetExecutingAssembly().Location;
-    private static readonly string RootGameFolder = Path.Combine(DoorstopAssemblyLocation, "..", "..", "..");
-    private static readonly string InactiveDoorstopAssemblyLocation = Path.Combine(RootGameFolder, "Plugins", "ContentLoader", "BepInEx", "ContentLoaderDoorstop.dll");
-    private static readonly string BepInExPreload = Path.Combine(DoorstopAssemblyLocation, "..", "BepInEx.Preloader.dll");
-    private static readonly string ManagedFolder = Path.Combine(RootGameFolder, "Content Warning_Data", "Managed");
-    private static readonly string SteamworksAssembly = Path.Combine(ManagedFolder, "com.rlabrecque.steamworks.net.dll");
-    private static readonly string BepInExFolder = Path.Combine(RootGameFolder, "BepInEx");
-    private static readonly string BepInExPluginFolder = Path.Combine(BepInExFolder, "plugins");
-    private static readonly string ContentWarningPluginFolder = Path.Combine(RootGameFolder, "Plugins");
-    private static readonly string DoorStopConfig = Path.Combine(RootGameFolder, "doorstop_config.ini");
-    private static readonly string DoorVersion = Path.Combine(RootGameFolder, ".doorstop_version");
-    private static readonly string WinHttpDll = Path.Combine(RootGameFolder, "winhttp.dll");
-    private static readonly string LocalInstallPath = Path.Combine(ContentWarningPluginFolder, "ContentLoader");
+public static partial class DoorstepBepInExHandler {
+    public static void StartBepInEx() {
+        Assembly.LoadFrom(BepInExPreload).GetType("Doorstop.Entrypoint").GetMethod("Start")!.Invoke(null, null);
+    }
 
-    public static void UpdateBepInEx() {
+    public static void CheckForContentLoaderUpdate() {
         if (!File.Exists(InactiveDoorstopAssemblyLocation)) { return; }
         if (File.Exists(DoorstopAssemblyLocation)) {
             byte[] contentLoaderDoorstopAssemblyBytes = File.ReadAllBytes(InactiveDoorstopAssemblyLocation);
             byte[] currentContentLoaderDoorstopAssemblyBytes = File.ReadAllBytes(DoorstopAssemblyLocation);
-            if (!contentLoaderDoorstopAssemblyBytes.SequenceEqual(currentContentLoaderDoorstopAssemblyBytes)) {
-                File.Delete(DoorstopAssemblyLocation); 
-            }
+            if (!contentLoaderDoorstopAssemblyBytes.SequenceEqual(currentContentLoaderDoorstopAssemblyBytes)) { File.Delete(DoorstopAssemblyLocation); }
         }
-    }
-
-    public static void StartBepInEx() {
-        Assembly.LoadFrom(BepInExPreload).GetType("Doorstop.Entrypoint").GetMethod("Start").Invoke(null, null);
     }
     
-    public static void MoveBepInExPlugins() {
-        Directory.CreateDirectory(BepInExPluginFolder);
-        
-        MoveLocalPlugins();
+    public static void InstallBepInExPlugins() {
         SteamAPI.Init();
         PublishedFileId_t[] subscribedItems = GetSubscribedItems();
+        if (!CheckForContentLoader(subscribedItems)) { UninstallBepInEx(); throw new Exception("ContentLoader not found"); }
         
-        RemoveUnsubscribedPlugins(subscribedItems);
-        MoveSubscribedPlugins(subscribedItems);
-
-        if (!CheckForContentLoader(subscribedItems)) {
-            UninstallBepInEx();
-            throw new Exception("Content Loader Unsubscribed or Missing");
+        List<string> subscribedItemPaths = [];
+        
+        foreach (PublishedFileId_t publishedFileIdT in subscribedItems) {
+            ulong publishedFileId = publishedFileIdT.m_PublishedFileId;
+            
+            if (!SteamUGC.GetItemInstallInfo(publishedFileIdT, out _, out string directory, 2048U, out _)) { continue; }
+            if (!IsBepInExPlugin(directory)) { continue; }
+            
+            string rootDirectory = Path.Combine(directory, SpecialFolderNameRoot);
+            if (Directory.Exists(rootDirectory)) { subscribedItemPaths.AddRange(InstallRootMod(rootDirectory)); }
+            else {
+                string pluginFolder = Path.Combine(BepInExPluginFolder, publishedFileId.ToString());
+                Copy(directory, pluginFolder);
+                subscribedItemPaths.AddRange(Directory.GetFiles(pluginFolder, "*", SearchOption.AllDirectories));
+            }
         }
+
+        string[] previousSubscribedItemPaths = [];
+        if (File.Exists(SubscribedItemsPath)) {
+            string subscribedItemsJson = File.ReadAllText(SubscribedItemsPath);
+            previousSubscribedItemPaths = JsonConvert.DeserializeObject<string[]>(subscribedItemsJson) ?? [];
+        }
+        foreach (string previousSubscribedItemPath in previousSubscribedItemPaths) {
+            if (subscribedItemPaths.Contains(previousSubscribedItemPath)) { continue; }
+            
+            try {
+                if (File.Exists(previousSubscribedItemPath)) {
+                    File.Delete(previousSubscribedItemPath);
+                }
+                string directory = Path.GetDirectoryName(previousSubscribedItemPath)!;
+                if (Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any()) {
+                    Directory.Delete(directory);
+                }
+            } catch (Exception) { /* ignored */ }
+        }
+        
+        File.WriteAllText(SubscribedItemsPath, JsonConvert.SerializeObject(subscribedItemPaths));
+    }
+
+    private static string[] InstallRootMod(string directory) {
+        string[] files = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
+        string[] targetFiles = new string[files.Length];
+        for (int j = 0; j < files.Length; j++) {
+            string file = files[j];
+            string relativeFile = file.Substring(directory.Length + 1);
+            string targetFile = Path.Combine(RootGameFolder, relativeFile);
+            targetFiles[j] = targetFile;
+            try {
+                if (File.Exists(targetFile)) { File.Delete(targetFile); }
+                string targetDirectory = Path.GetDirectoryName(targetFile)!;
+                if (!Directory.Exists(targetDirectory)) { Directory.CreateDirectory(targetDirectory); }
+                File.Copy(file, targetFile);
+            } catch (Exception) { /* ignored */ }
+        }
+        return targetFiles;
     }
     
     private static bool CheckForContentLoader(PublishedFileId_t[] subscribedItems) {
-        // https://steamcommunity.com/sharedfiles/filedetails/?id=3387698650
         if (Directory.Exists(LocalInstallPath)) { return true; }
-        foreach (PublishedFileId_t t in subscribedItems) { if (t.ToString() == "3387698650") { return true; } }
+        foreach (PublishedFileId_t t in subscribedItems) { if (t.m_PublishedFileId == 3387698650UL) { return true; } }
         return false;
     }
     
@@ -61,83 +92,5 @@ public class DoorstepBepInExHandler {
         if (Directory.Exists(BepInExFolder)) { Directory.Delete(BepInExFolder, true); }
         if (File.Exists(DoorStopConfig)) { File.Delete(DoorStopConfig); }
         if (File.Exists(DoorVersion)) { File.Delete(DoorVersion); }
-        /*if (File.Exists(WinHttpDll)) { File.Delete(WinHttpDll); }*/
-    }
-    
-    private static void MoveLocalPlugins() {
-        if (!Directory.Exists(ContentWarningPluginFolder)) { return; }
-        string[] directories = Directory.GetDirectories(ContentWarningPluginFolder);
-        foreach (string directory in directories) {
-            if (!DirectoryHasBepInExPlugin(directory)) { continue; }
-            string targetDirectory = Path.Combine(DoorstepBepInExHandler.BepInExPluginFolder, Path.GetFileName(directory));
-            Copy(directory, targetDirectory);
-        }
-    }
-    
-    private static void RemoveUnsubscribedPlugins(PublishedFileId_t[] subscribedItems) {
-        string[] directories = Directory.GetDirectories(DoorstepBepInExHandler.BepInExPluginFolder);
-        foreach (string directory in directories) {
-            if (!File.Exists(Path.Combine(directory, "SteamWorkshop"))) { continue; }
-            string subscribedId = File.ReadAllText(Path.Combine(directory, "SteamWorkshop"));
-            if (subscribedItems.Any(t => t.ToString() == subscribedId)) { continue; }
-            Directory.Delete(directory, true);
-        }
-    }
-    
-    private static void MoveSubscribedPlugins(PublishedFileId_t[] subscribedItems) {
-        Assembly.LoadFrom(DoorstepBepInExHandler.SteamworksAssembly);
-        
-        foreach (PublishedFileId_t t in subscribedItems) {
-            if (!SteamUGC.GetItemInstallInfo(t, out _, out string directory, 2048U, out _)) { continue; }
-            if (!DirectoryHasBepInExPlugin(directory)) { continue; }
-            string targetDirectory = Path.Combine(DoorstepBepInExHandler.BepInExPluginFolder, t.ToString());
-            Copy(directory, targetDirectory);
-            File.WriteAllText(Path.Combine(targetDirectory, "SteamWorkshop"), t.ToString()); 
-        }
-    }
-
-    static bool DirectoryHasBepInExPlugin(string directory) {
-        string[] files = Directory.GetFiles(directory, "*.dll");
-        foreach (string file in files) {
-            if (!FileIsBepInExPlugin(file)) { continue; }
-            return true;
-        }
-        return false;
-    }
-    
-    static bool FileIsBepInExPlugin(string file) {
-        using AssemblyDefinition? assemblyDefinition = AssemblyDefinition.ReadAssembly(file);
-        foreach (ModuleDefinition? module in assemblyDefinition.Modules) {
-            foreach (TypeDefinition? type in module.Types) {
-                foreach (CustomAttribute? attribute in type.CustomAttributes) {
-                    if (attribute.AttributeType.Name == "BepInPlugin") { return true; }
-                }
-            }
-        }
-        return false;
-    }
-    
-    static void Copy(string sourceDir, string targetDir) {
-        Directory.CreateDirectory(targetDir);
-        foreach (string file in Directory.GetFiles(sourceDir)) {
-            try {
-                string targetFile = Path.Combine(targetDir, Path.GetFileName(file));
-                if (File.Exists(targetFile)) { File.Delete(targetFile); }
-                File.Copy(file, targetFile);
-            }
-            catch (Exception) { /* ignored */ }
-        }
-        foreach (string directory in Directory.GetDirectories(sourceDir)) {
-            Copy(directory, Path.Combine(targetDir, Path.GetFileName(directory)));
-        }
-    }
-    
-    private static PublishedFileId_t[] GetSubscribedItems() {
-        try {
-            uint numSubscribedItems = SteamUGC.GetNumSubscribedItems();
-            PublishedFileId_t[] pvecPublishedFileID = new PublishedFileId_t[numSubscribedItems];
-            SteamUGC.GetSubscribedItems(pvecPublishedFileID, numSubscribedItems);
-            return pvecPublishedFileID;
-        } catch (Exception) { return []; }
     }
 }

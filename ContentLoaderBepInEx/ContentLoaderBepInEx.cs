@@ -13,14 +13,22 @@ namespace BepInExFix;
 [ContentWarningPlugin("Computery.ContentLoader.BepInEx", "1.0", true)]
 [BepInPlugin("Computery.ContentLoader.BepInEx", "Content Loader BepInEx", "1.0.0")]
 public class ContentLoaderBepInEx : BaseUnityPlugin {
-    public void Awake() { Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly()); }
+    public void Awake() {
+        Debug.Log("Content Loader BepInEx Awake");
+        Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
+    }
 }
 
 [HarmonyPatch(typeof(Plugin))]
 public class PluginPatchAgain {
     public void PatchNonBepinExShit(Assembly assembly)
     {
-        if (DirectoryHasBepInExPlugin(Path.GetDirectoryName(assembly.Location))) { return; }
+            Debug.Log("Skipping BepInEx mod: " + assembly.Location);
+        if (DirectoryHasBepInExPlugin(Path.GetDirectoryName(assembly.Location))) {
+            Debug.Log("Skipping BepInEx mod: " + assembly.Location);
+            return;
+        }
+        Debug.Log("Patching non-BepInEx mod: " + assembly.Location);
         Harmony.CreateAndPatchAll(assembly);
     }
     
@@ -31,6 +39,7 @@ public class PluginPatchAgain {
         codeMatcher.SearchForward(i =>
             i.opcode == OpCodes.Callvirt &&
             i.OperandIs(AccessTools.Method(typeof(Harmony), nameof(Harmony.PatchAll), new[] { typeof(Assembly) })));
+        Debug.Log("LoadAssemblyFromFilePatch: " + codeMatcher.Instruction);
         codeMatcher.RemoveInstruction();
         codeMatcher.InsertAndAdvance(new CodeInstruction(OpCodes.Call,
             AccessTools.Method(typeof(PluginPatchAgain), nameof(PatchNonBepinExShit))));

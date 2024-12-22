@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using ContentLoaderDoorstop;
+using Steamworks;
 using UnityEngine;
 
 namespace Doorstop;
@@ -7,8 +8,9 @@ namespace Doorstop;
 public class Entrypoint {
     public static void Start() {
         try {
-            DoorstepBepInExHandler.UpdateBepInEx();
-            DoorstepBepInExHandler.MoveBepInExPlugins();
+            DoorstepBepInExHandler.LoadNecessaryAssemblies();
+            DoorstepBepInExHandler.CheckForContentLoaderUpdate();
+            DoorstepBepInExHandler.InstallBepInExPlugins();
             DoorstepBepInExHandler.StartBepInEx();
         }
         catch (Exception e) {

@@ -10,8 +10,8 @@ using Zorro.Settings;
 
 namespace BepInExFix;
 
-[ContentWarningPlugin("Computery.ContentLoader.BepInEx", "1.0", true)]
-[BepInPlugin("Computery.ContentLoader.BepInEx", "Content Loader BepInEx", "1.0.0")]
+[ContentWarningPlugin("Computery.ContentLoader.BepInEx", "3.0", true)]
+[BepInPlugin("Computery.ContentLoader.BepInEx", "Content Loader BepInEx", "3.0.0")]
 public class ContentLoaderBepInEx : BaseUnityPlugin {
     public void Awake() {
         Debug.Log("Content Loader BepInEx Awake");

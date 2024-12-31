@@ -25,6 +25,6 @@
         <ItemGroup>
             <_Output Include="$(OutputPath)\*;Resources/**" Exclude="$(OutputPath)\*.json"/>
         </ItemGroup>
-        <Copy SourceFiles="@(_Output)" DestinationFolder="$(CWDir)\Plugins\ContentLoader\%(RecursiveDir)" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(_Output)" DestinationFolder="$(CWDir)\Plugins\ContentLoader\Root\BepInEx\plugins\%(RecursiveDir)" SkipUnchangedFiles="true" />
     </Target>
 </Project>

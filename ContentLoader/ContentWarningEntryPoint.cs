@@ -5,11 +5,11 @@ using Debug = UnityEngine.Debug;
 
 namespace ContentLoader;
 
-[ContentWarningPlugin("Computery.ContentLoader", "3.1", true)]
+[ContentWarningPlugin("Computery.ContentLoader", "3.2", true)]
 public class ContentWarningEntryPoint {
     private static readonly string AssemblyLocation = Assembly.GetExecutingAssembly().Location;
-    private static readonly string RootGameFolder = Path.Combine(Application.dataPath, "..");
-    private static readonly string ContentLoaderPluginFolder = Path.Combine(AssemblyLocation, "..");
+    private static readonly string RootGameFolder = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+    private static readonly string ContentLoaderPluginFolder = Path.GetFullPath(Path.Combine(AssemblyLocation, ".."));
     private static readonly string DoorstopAssemblyLocation = Path.Combine(RootGameFolder, "BepInEx", "Core", "ContentLoaderDoorstop.dll");
     private static readonly string InactiveDoorstopAssemblyLocation = Path.Combine(ContentLoaderPluginFolder, "BepInEx", "BepInEx", "Core", "ContentLoaderDoorstop.dll");
     private static readonly string InactiveBepInEx = Path.Combine(ContentLoaderPluginFolder, "BepInEx");

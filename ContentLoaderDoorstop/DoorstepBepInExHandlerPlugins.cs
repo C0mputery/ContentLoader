@@ -7,8 +7,10 @@ public static partial class DoorstepBepInExHandler {
     static bool IsBepInExPlugin(string directory) {
         string[] files = Directory.GetFiles(directory, "*.dll", SearchOption.AllDirectories);
         foreach (string file in files) {
-            if (!FileIsBepInExPlugin(file)) { continue; }
-            return true;
+            try {
+                if (!FileIsBepInExPlugin(file)) { continue; }
+                return true;
+            } catch (Exception) { /* ignored */ }
         }
         return false;
     }
